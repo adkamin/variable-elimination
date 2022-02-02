@@ -5,6 +5,7 @@ Class for the implementation of the variable elimination algorithm.
 """
 
 import pprint
+import pandas as pd
 
 
 class VariableElimination():
@@ -43,13 +44,13 @@ class VariableElimination():
 
     def get_factors(self, var):
         """ 
-        Return factors which contain variable var
+        Return (keys of) factors which contain variable var
         """
-        
+
         factors = []
         for key in self.factors:
             if var in key[1]:
-                factors.append(self.factors[key])
+                factors.append(key)
         return factors
 
 
@@ -58,6 +59,37 @@ class VariableElimination():
         Return a factor which is product of factors
         """
 
+        pass
+
+
+    def sum_out(self, var, key):
+        """"
+        Return a factor in which var was summed out of factor with key
+        """
+
+        vars = [x for x in key[1] if x != var]
+        factor = self.factors[key]
+        data = []
+        for i in range (0,factor.shape[0]):
+            for j in range (1,factor.shape[0]-1):
+                if i != j and self.can_sum_out(factor, i, j, vars):
+                    if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
+                        print('hi')
+                        sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
+                        print(sum_prob)
+                        data.append(0, , , sum_prob)
+
+        new_factor = pd.DataFrame(data, columns = vars + 'prob')
+        return new_factor
+
+    
+    def can_sum_out(self, factor, i, j, vars):
+        for v in vars:
+            # print(factor.loc[factor.index[i], v])
+            # df.loc[df.index[#], 'NAME'] where # is a valid integer index and NAME is the name of the column.
+            if factor.loc[factor.index[i], v] != factor.loc[factor.index[j], v]:
+                return False
+        return True
 
 
     def run(self, query, observed, elim_order):
@@ -97,13 +129,22 @@ class VariableElimination():
 
         i = len(self.factors) # Currently the highest factor index
         for v in elim_order:
-            print(f'\nVariable to be eliminated: {v}')
+            print(f'\nThe variable to be eliminated: {v}')
             if v != query:
                 factors_with_v = self.get_factors(v)
                 # new_factor = self.multiply(factors_with_v)
-                # reduced_factor = self.sum_out(v, factors_with_v)
+                # reduced_factor = self.sum_out(v, new_factor)
+                reduced_factor = self.sum_out(v, factors_with_v[1])
                 # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index)
                 i += 1
+            break
+
+        # Normalize
+        print(f'-------------------------------------')
+        print(f'G) The final CPT after normalization:')
+        print(f'-------------------------------------')
+
+        print(f'\nDone!')
 
 
 
