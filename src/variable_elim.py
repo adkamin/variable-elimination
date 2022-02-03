@@ -15,7 +15,6 @@ class VariableElimination():
         Initialize the variable elimination algorithm with the specified network.
         Add more initializations if necessary.
         """
-
         self.factors = network.probabilities # dictionary (keys are variables)
 
 
@@ -23,7 +22,6 @@ class VariableElimination():
         """ 
         Initialize factors, based on the observation
         """
-
         # Represent factors with keys with an index and a tuple of involved variables
         # Index is useful once there are factors that contain the same variables
         # Involved variables are useful for eliminating variables in the VE algorithm
@@ -33,6 +31,7 @@ class VariableElimination():
         for key in factors_copy:
             new_factors[(i, tuple(factors_copy[key].columns[:-1]))] = self.factors.pop(key)
             i += 1
+
         # Reduce the factors given the observation
         self.factors = new_factors
         for o in observed:
@@ -46,7 +45,6 @@ class VariableElimination():
         """ 
         Return (keys of) factors which contain variable var
         """
-
         factors = []
         for key in self.factors:
             if var in key[1]:
@@ -66,21 +64,36 @@ class VariableElimination():
         """"
         Return a factor in which var was summed out of factor with key
         """
-
         vars = [x for x in key[1] if x != var]
         factor = self.factors[key]
+        print('---------------')
+        print('Original factor')
+        print(factor)
+        print('---------------')
         data = []
         for i in range (0,factor.shape[0]):
             for j in range (1,factor.shape[0]-1):
                 if i != j and self.can_sum_out(factor, i, j, vars):
                     if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
-                        print('hi')
+                        print('-------------------------')
+                        print('Summing out followin rows')
+                        print(factor.loc[factor.index[i]])
+                        print(factor.loc[factor.index[j]])
+                        print('-------------------------')
                         sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
-                        print(sum_prob)
-                        data.append(0, , , sum_prob)
+                        row = []
+                        for v in vars:
+                            row.append(factor.loc[factor.index[i], v])
+                        row.append(str(sum_prob))
+                        print(row)
+                        data.append(row)
 
-        new_factor = pd.DataFrame(data, columns = vars + 'prob')
+        new_factor = pd.DataFrame(data, columns = vars + ['prob'])
+        print('----------------')
+        print('Final factor is:')
+        print(new_factor)
         return new_factor
+
 
     
     def can_sum_out(self, factor, i, j, vars):
@@ -131,6 +144,7 @@ class VariableElimination():
         for v in elim_order:
             print(f'\nThe variable to be eliminated: {v}')
             if v != query:
+                v = 'Earthquake'
                 factors_with_v = self.get_factors(v)
                 # new_factor = self.multiply(factors_with_v)
                 # reduced_factor = self.sum_out(v, new_factor)

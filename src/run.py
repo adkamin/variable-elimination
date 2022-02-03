@@ -29,7 +29,8 @@ if __name__ == '__main__':
     query = 'Alarm'
 
     # The evidence (can also be empty when there is no evidence)
-    evidence = {'Burglary': 'True', 'JohnCalls' : 'False'}
+    evidence = {'Burglary': 'True'}
+    # evidence = {}
 
     # The elimination ordering
     elim_order = net.nodes
