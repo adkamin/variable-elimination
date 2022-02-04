@@ -1,30 +1,30 @@
 """
 @Author: Andrea Minichova (s1021688)
 
-Class for the implementation of the variable elimination algorithm.
+Class for the implementation of the variable elimination algorithm
 """
 
 import pprint
 import pandas as pd
+import itertools
 
 
 class VariableElimination():
 
     def __init__(self, network):
         """
-        Initialize the variable elimination algorithm with the specified network.
-        Add more initializations if necessary.
+        Initialize the variable elimination algorithm with the specified network
         """
-        self.factors = network.probabilities # dictionary (keys are variables)
+        self.factors = network.probabilities
 
 
     def update_factors(self, observed):
         """ 
-        Initialize factors, based on the observation
+        Initialize factors, based on the observation observed
         """
         # Represent factors with keys with an index and a tuple of involved variables
-        # Index is useful once there are factors that contain the same variables
-        # Involved variables are useful for eliminating variables in the VE algorithm
+        # 1. Index is useful once there are factors that contain the same variables
+        # 2. Involved variables are useful for eliminating variables in the VE algorithm
         factors_copy = dict.copy(self.factors)
         new_factors = {}
         i = 0
@@ -54,10 +54,34 @@ class VariableElimination():
 
     def multiply(self, factors):
         """
-        Return a factor which is product of factors
+        Return a factor which is a result of multiplying all factors
+        Factors is a list of keys with which we can access individual factors
         """
+        
 
-        pass
+
+    def mult_fact(self, f1, f2):
+        """
+        Returns a factor which is a result of multiplying two factors f1 and f2
+        """
+        # Find what variables are shared
+        # Find rows in both factors where shared variables have the same values
+        # Multiply probabilities, add to the new factor
+        # Columns in the new factor have all shared variables (make sure they fit tho)
+        data = []
+        factor = pd.DataFrame(data, columns = '')
+        return factor
+
+    def generate_factor(self, vars):
+        table = list(map(list, list(itertools.product(['True', 'False'], repeat=len(vars)))))
+        row = []
+        data = []
+        for r in table:
+            row = r
+            row.append('0')
+            data.append(row)
+        new_factor = pd.DataFrame(data, columns = vars + ['prob'])
+        return new_factor
 
 
     def sum_out(self, var, key):
@@ -97,9 +121,11 @@ class VariableElimination():
 
     
     def can_sum_out(self, factor, i, j, vars):
+        """ 
+        Check whether row i and row j of factor can be summed out, e.i. whether
+        all values of vars are the same in both rows
+        """
         for v in vars:
-            # print(factor.loc[factor.index[i], v])
-            # df.loc[df.index[#], 'NAME'] where # is a valid integer index and NAME is the name of the column.
             if factor.loc[factor.index[i], v] != factor.loc[factor.index[j], v]:
                 return False
         return True
@@ -146,10 +172,11 @@ class VariableElimination():
             if v != query:
                 v = 'Earthquake'
                 factors_with_v = self.get_factors(v)
-                # new_factor = self.multiply(factors_with_v)
+                # new_factor1 = self.multiply(factors_with_v)
                 # reduced_factor = self.sum_out(v, new_factor)
-                reduced_factor = self.sum_out(v, factors_with_v[1])
-                # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index)
+                self.generate_factor(['A','B','C','D'])
+                # reduced_factor = self.sum_out(v, factors_with_v[1])
+                # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index i)
                 i += 1
             break
 

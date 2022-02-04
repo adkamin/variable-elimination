@@ -20,7 +20,7 @@ if __name__ == '__main__':
     print("Parents:")
     print(f'{net.parents}\n')
     print("Probabilities:")
-    pprint.pprint(net.probabilities) # Pretty printing of dictionaries
+    pprint.pprint(net.probabilities)
 
     # Instance of variable elimination algorithm
     ve = VariableElimination(net)
