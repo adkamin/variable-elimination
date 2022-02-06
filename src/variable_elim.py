@@ -57,20 +57,55 @@ class VariableElimination():
         Return a factor which is a result of multiplying all factors
         Factors is a list of keys with which we can access individual factors
         """
+        vars = []
+        for key in factors:
+            vars.extend(list(self.factors[key].columns[:-1]))
+        vars = list(set(vars))  # Remove duplicate variables
+        product = self.generate_factor(vars)
+        print('--------------------- NEW FACTOR ------------------------')
+        print(product)
+
+        probabilities = []
+        prob = 1
+        current_prob = 1
+
+        # Loop through rows of factor which is eventually the final product
+        for i in range (0,product.shape[0]):
+            product_row = product.loc[product.index[i]]
+            # Loop through all factors which need to be multiplied
+            for key in factors:
+                # Loop through each row of a given factor to match the variable-value pairs
+                for j in range(0, self.factors[key].shape[0]):
+                    row = self.factors[key].loc[self.factors[key].index[j]]
+                    vars = list(row.keys()[:-1])
+                    match = False
+                    for var in vars:
+                        print('hi')
+                    # if matches with variable-value pairs from product factor, get its probability current_prob
+                    prob = prob * current_prob
+                    break
+            probabilities.append(prob)
+            current_prob = 1
+            prob = 1
+
+        # add the whole probabilities column!
+        product['prob'] = probabilities
+        return product
         
 
 
-    def mult_fact(self, f1, f2):
-        """
-        Returns a factor which is a result of multiplying two factors f1 and f2
-        """
-        # Find what variables are shared
-        # Find rows in both factors where shared variables have the same values
-        # Multiply probabilities, add to the new factor
-        # Columns in the new factor have all shared variables (make sure they fit tho)
-        data = []
-        factor = pd.DataFrame(data, columns = '')
-        return factor
+    # def mult_fact(self, f1, f2):
+    #     """
+    #     Returns a factor which is a result of multiplying two factors f1 and f2
+    #     """
+    #     # Find what variables are shared
+    #     # Find rows in both factors where shared variables have the same values
+    #     # Multiply probabilities, add to the new factor
+    #     # Columns in the new factor have all shared variables (make sure they fit tho)
+    #     data = []
+    #     factor = pd.DataFrame(data, columns = '')
+    #     return factor
+
 
     def generate_factor(self, vars):
         table = list(map(list, list(itertools.product(['True', 'False'], repeat=len(vars)))))
@@ -172,9 +207,8 @@ class VariableElimination():
             if v != query:
                 v = 'Earthquake'
                 factors_with_v = self.get_factors(v)
-                # new_factor1 = self.multiply(factors_with_v)
+                new_factor1 = self.multiply(factors_with_v)
                 # reduced_factor = self.sum_out(v, new_factor)
-                self.generate_factor(['A','B','C','D'])
                 # reduced_factor = self.sum_out(v, factors_with_v[1])
                 # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index i)
                 i += 1
