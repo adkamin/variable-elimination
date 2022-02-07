@@ -6,6 +6,7 @@ Class for the implementation of the variable elimination algorithm
 
 import pprint
 import pandas as pd
+import numpy as np
 import itertools
 
 
@@ -53,6 +54,61 @@ class VariableElimination():
 
 
     def multiply(self, factors):
+        vars = []
+        for key in factors:
+            vars.extend(list(self.factors[key].columns[:-1]))
+        vars = list(set(vars))  # Remove duplicate variables
+        product = self.generate_factor(vars)
+
+        print('------------------DEBUGGING---------------------')
+        print('-----------------FINAL FACTOR-------------------')
+        print(product)
+
+        probabilities = []
+        prob = 1
+        current_prob = 1
+
+        # Loop through rows of factor which is eventually the final product
+        print('-----------------FINAL FACTOR ROW BY ROW-------------------')
+        for i in range (0,product.shape[0]):
+            final_row = product.loc[product.index[i]]
+            # print(final_row)
+            # Loop through all factors which need to be multiplied
+            for key in factors:
+            #     # Loop through each row of a given factor to match the variable-value pairs
+                for j in range(0, self.factors[key].shape[0]):
+                    current_row = self.factors[key].loc[self.factors[key].index[j]]
+                    current_row = current_row.append(pd.Series(['tmp'])).transpose()
+                    final_row = final_row.append(pd.Series(['tmp'])).transpose()
+
+                    current_row.to_frame()
+                    final_row.to_frame()
+
+                    print('------------ROW WITH TMP-----------')
+                    print(((current_row)))
+                    print('------------PRODUCT ROW WITH TMP-----------')
+                    print(((final_row)))
+                    
+                    # intersection = pd.merge(current_row.rename('row'), final_row.rename('final_row'), how='outer')
+                    final_row = final_row[:-1]
+            #         # if matches with variable-value pairs from product factor, get its probability current_prob
+            #         if len(intersection.columns) > 1 and row.equals(intersection):
+            #             print('They are equal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            #             current_prob = row.get('prob')
+            #             print(row.get('prob'))
+            #             prob = prob * current_prob
+            #             # Break because we found match in this specific factor, move onto the next factor
+            #             break
+            # probabilities.append(prob)
+            # current_prob = 1
+            # prob = 1
+
+        # add the whole probabilities column!
+        # product['prob'] = probabilities
+        return product
+
+
+    def multiply1(self, factors):
         """
         Return a factor which is a result of multiplying all factors
         Factors is a list of keys with which we can access individual factors
@@ -62,28 +118,30 @@ class VariableElimination():
             vars.extend(list(self.factors[key].columns[:-1]))
         vars = list(set(vars))  # Remove duplicate variables
         product = self.generate_factor(vars)
-        print('--------------------- NEW FACTOR ------------------------')
-        print(product)
 
         probabilities = []
         prob = 1
         current_prob = 1
-
         # Loop through rows of factor which is eventually the final product
         for i in range (0,product.shape[0]):
-            product_row = product.loc[product.index[i]]
+            product_row = product.loc[product.index[i]].to_frame().transpose()
             # Loop through all factors which need to be multiplied
             for key in factors:
                 # Loop through each row of a given factor to match the variable-value pairs
                 for j in range(0, self.factors[key].shape[0]):
-                    row = self.factors[key].loc[self.factors[key].index[j]]
-                    vars = list(row.keys()[:-1])
-                    match = False
-                    for var in vars:
-                        print('hi')
+                    row = self.factors[key].loc[self.factors[key].index[j]].to_frame().transpose()
+                    row['tmp'] = '1'
+                    product_row['tmp'] = '1'
+                    intersection = pd.merge(row, product_row, how='inner')
+                    
                     # if matches with variable-value pairs from product factor, get its probability current_prob
-                    prob = prob * current_prob
-                    break
+                    if len(intersection.columns) > 1 and row.equals(intersection):
+                        print('They are equal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                        current_prob = row.get('prob')
+                        print(row.get('prob'))
+                        prob = prob * current_prob
+                        # Break because we found match in this specific factor, move onto the next factor
+                        break
             probabilities.append(prob)
             current_prob = 1
             prob = 1
@@ -91,20 +149,6 @@ class VariableElimination():
         # add the whole probabilities column!
         product['prob'] = probabilities
         return product
-        
-
-
-    # def mult_fact(self, f1, f2):
-    #     """
-    #     Returns a factor which is a result of multiplying two factors f1 and f2
-    #     """
-    #     # Find what variables are shared
-    #     # Find rows in both factors where shared variables have the same values
-    #     # Multiply probabilities, add to the new factor
-    #     # Columns in the new factor have all shared variables (make sure they fit tho)
-    #     data = []
-    #     factor = pd.DataFrame(data, columns = '')
-    #     return factor
 
 
     def generate_factor(self, vars):
@@ -205,9 +249,12 @@ class VariableElimination():
         for v in elim_order:
             print(f'\nThe variable to be eliminated: {v}')
             if v != query:
-                v = 'Earthquake'
                 factors_with_v = self.get_factors(v)
+                print('-------------------PRODUCTS TO MULTIPLY----------------------')
+                print(factors_with_v)
                 new_factor1 = self.multiply(factors_with_v)
+                print('-------------------FINAL MULTIPLIED PRODUCT----------------------')
+                print(new_factor1)
                 # reduced_factor = self.sum_out(v, new_factor)
                 # reduced_factor = self.sum_out(v, factors_with_v[1])
                 # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index i)

@@ -6,6 +6,9 @@ Variable Elimination Alogorithm
 Framework provded by Joris van Vugt, Moira Berens, Leonieke van den Bulk
 """
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from bayesnet import BayesNet
 from variable_elim import VariableElimination
 import pprint
@@ -29,8 +32,8 @@ if __name__ == '__main__':
     query = 'Alarm'
 
     # The evidence (can also be empty when there is no evidence)
-    evidence = {'Burglary': 'True'}
-    # evidence = {}
+    # evidence = {'Burglary': 'True'}
+    evidence = {}
 
     # The elimination ordering
     elim_order = net.nodes
