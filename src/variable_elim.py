@@ -53,6 +53,16 @@ class VariableElimination():
         return factors
 
 
+    def is_in(self, factor1, factor2):
+        vars1 = list(factor1.columns[:-1])
+        print(vars1)
+        for v1 in vars1:
+            cell = factor2.iloc[0][v1]
+            if factor1.iloc[0][v1] != cell:
+                return False
+        return True
+
+
     def multiply(self, factors):
         vars = []
         for key in factors:
@@ -60,93 +70,28 @@ class VariableElimination():
         vars = list(set(vars))  # Remove duplicate variables
         product = self.generate_factor(vars)
 
-        print('------------------DEBUGGING---------------------')
-        print('-----------------FINAL FACTOR-------------------')
-        print(product)
-
         probabilities = []
         prob = 1
         current_prob = 1
 
-        # Loop through rows of factor which is eventually the final product
-        print('-----------------FINAL FACTOR ROW BY ROW-------------------')
         for i in range (0,product.shape[0]):
-            final_row = product.loc[product.index[i]]
-            # print(final_row)
-            # Loop through all factors which need to be multiplied
+            final_row = product.iloc[[i]]
             for key in factors:
-            #     # Loop through each row of a given factor to match the variable-value pairs
                 for j in range(0, self.factors[key].shape[0]):
-                    current_row = self.factors[key].loc[self.factors[key].index[j]]
-                    current_row = current_row.append(pd.Series(['tmp'])).transpose()
-                    final_row = final_row.append(pd.Series(['tmp'])).transpose()
-
-                    current_row.to_frame()
-                    final_row.to_frame()
-
-                    print('------------ROW WITH TMP-----------')
-                    print(((current_row)))
-                    print('------------PRODUCT ROW WITH TMP-----------')
-                    print(((final_row)))
-                    
-                    # intersection = pd.merge(current_row.rename('row'), final_row.rename('final_row'), how='outer')
-                    final_row = final_row[:-1]
-            #         # if matches with variable-value pairs from product factor, get its probability current_prob
-            #         if len(intersection.columns) > 1 and row.equals(intersection):
-            #             print('They are equal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            #             current_prob = row.get('prob')
-            #             print(row.get('prob'))
-            #             prob = prob * current_prob
-            #             # Break because we found match in this specific factor, move onto the next factor
-            #             break
-            # probabilities.append(prob)
-            # current_prob = 1
-            # prob = 1
-
-        # add the whole probabilities column!
-        # product['prob'] = probabilities
-        return product
-
-
-    def multiply1(self, factors):
-        """
-        Return a factor which is a result of multiplying all factors
-        Factors is a list of keys with which we can access individual factors
-        """
-        vars = []
-        for key in factors:
-            vars.extend(list(self.factors[key].columns[:-1]))
-        vars = list(set(vars))  # Remove duplicate variables
-        product = self.generate_factor(vars)
-
-        probabilities = []
-        prob = 1
-        current_prob = 1
-        # Loop through rows of factor which is eventually the final product
-        for i in range (0,product.shape[0]):
-            product_row = product.loc[product.index[i]].to_frame().transpose()
-            # Loop through all factors which need to be multiplied
-            for key in factors:
-                # Loop through each row of a given factor to match the variable-value pairs
-                for j in range(0, self.factors[key].shape[0]):
-                    row = self.factors[key].loc[self.factors[key].index[j]].to_frame().transpose()
-                    row['tmp'] = '1'
-                    product_row['tmp'] = '1'
-                    intersection = pd.merge(row, product_row, how='inner')
-                    
-                    # if matches with variable-value pairs from product factor, get its probability current_prob
-                    if len(intersection.columns) > 1 and row.equals(intersection):
-                        print('They are equal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                        current_prob = row.get('prob')
-                        print(row.get('prob'))
+                    current_row = self.factors[key].iloc[[j]]
+                    if self.is_in(current_row,final_row):
+                        print('EQUAL')
+                        current_prob = current_row.iloc[0]['prob']
+                        print(current_prob)
                         prob = prob * current_prob
-                        # Break because we found match in this specific factor, move onto the next factor
+                        print(prob)
                         break
+                    else:
+                        print('UNEQUAL')
             probabilities.append(prob)
             current_prob = 1
             prob = 1
-
-        # add the whole probabilities column!
+            
         product['prob'] = probabilities
         return product
 
@@ -157,7 +102,7 @@ class VariableElimination():
         data = []
         for r in table:
             row = r
-            row.append('0')
+            row.append(0)
             data.append(row)
         new_factor = pd.DataFrame(data, columns = vars + ['prob'])
         return new_factor
