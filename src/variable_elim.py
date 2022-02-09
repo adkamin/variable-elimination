@@ -4,7 +4,9 @@
 Class for the implementation of the variable elimination algorithm
 """
 
+from functools import reduce
 import pprint
+from typing import Tuple
 import pandas as pd
 import numpy as np
 import itertools
@@ -55,7 +57,6 @@ class VariableElimination():
 
     def is_in(self, factor1, factor2):
         vars1 = list(factor1.columns[:-1])
-        print(vars1)
         for v1 in vars1:
             cell = factor2.iloc[0][v1]
             if factor1.iloc[0][v1] != cell:
@@ -80,20 +81,14 @@ class VariableElimination():
                 for j in range(0, self.factors[key].shape[0]):
                     current_row = self.factors[key].iloc[[j]]
                     if self.is_in(current_row,final_row):
-                        print('EQUAL')
                         current_prob = current_row.iloc[0]['prob']
-                        print(current_prob)
                         prob = prob * current_prob
-                        print(prob)
                         break
-                    else:
-                        print('UNEQUAL')
             probabilities.append(prob)
-            current_prob = 1
             prob = 1
             
         product['prob'] = probabilities
-        return product
+        return vars, product
 
 
     def generate_factor(self, vars):
@@ -114,32 +109,19 @@ class VariableElimination():
         """
         vars = [x for x in key[1] if x != var]
         factor = self.factors[key]
-        print('---------------')
-        print('Original factor')
-        print(factor)
-        print('---------------')
         data = []
         for i in range (0,factor.shape[0]):
             for j in range (1,factor.shape[0]-1):
                 if i != j and self.can_sum_out(factor, i, j, vars):
                     if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
-                        print('-------------------------')
-                        print('Summing out followin rows')
-                        print(factor.loc[factor.index[i]])
-                        print(factor.loc[factor.index[j]])
-                        print('-------------------------')
                         sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
                         row = []
                         for v in vars:
                             row.append(factor.loc[factor.index[i], v])
                         row.append(str(sum_prob))
-                        print(row)
                         data.append(row)
-
         new_factor = pd.DataFrame(data, columns = vars + ['prob'])
-        print('----------------')
-        print('Final factor is:')
-        print(new_factor)
+        self.factors[key] = new_factor
         return new_factor
 
 
@@ -171,9 +153,9 @@ class VariableElimination():
                 for the query variable
         """
 
-        print('-------------------------------------------------------')
-        print('Variable Elimination Algorithm with logs of steps taken')
-        print('-------------------------------------------------------')
+        print('------------------------------')
+        print('Variable Elimination Algorithm')
+        print('------------------------------')
 
         print(f'\nA) The query variable: {query}\n')
         if observed: 
@@ -197,16 +179,21 @@ class VariableElimination():
                 factors_with_v = self.get_factors(v)
                 print('-------------------PRODUCTS TO MULTIPLY----------------------')
                 print(factors_with_v)
-                new_factor1 = self.multiply(factors_with_v)
+                vars, new_factor = self.multiply(factors_with_v)
                 print('-------------------FINAL MULTIPLIED PRODUCT----------------------')
-                print(new_factor1)
-                # reduced_factor = self.sum_out(v, new_factor)
-                # reduced_factor = self.sum_out(v, factors_with_v[1])
-                # remove factors_with_v from self.factors, add reduced factor to self.factors (with new index i)
-                i += 1
-            break
+                print(new_factor)
 
-        # Normalize
+                self.factors[(i, tuple(vars))] = new_factor
+                reduced_factor = self.sum_out(v, (i, tuple(vars)))
+                for key in factors_with_v:
+                    self.factors.pop(key)
+
+                reduced_factor['prob'] = pd.to_numeric(reduced_factor['prob'], downcast="float")
+                total = reduced_factor['prob'].sum()
+                reduced_factor['prob'] = reduced_factor['prob'] / total
+
+                i += 1
+
         print(f'-------------------------------------')
         print(f'G) The final CPT after normalization:')
         print(f'-------------------------------------')
