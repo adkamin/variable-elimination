@@ -68,7 +68,7 @@ class VariableElimination():
         vars = []
         for key in factors:
             vars.extend(list(self.factors[key].columns[:-1]))
-        vars = list(set(vars))  # Remove duplicate variables
+        vars = list(set(vars))
         product = self.generate_factor(vars)
 
         probabilities = []
@@ -80,8 +80,8 @@ class VariableElimination():
             for key in factors:
                 for j in range(0, self.factors[key].shape[0]):
                     current_row = self.factors[key].iloc[[j]]
-                    if self.is_in(current_row,final_row):
-                        current_prob = current_row.iloc[0]['prob']
+                    if self.is_in(current_row, final_row):
+                        current_prob = float(current_row.iloc[0]['prob'])
                         prob = prob * current_prob
                         break
             probabilities.append(prob)
@@ -111,7 +111,7 @@ class VariableElimination():
         factor = self.factors[key]
         data = []
         for i in range (0,factor.shape[0]):
-            for j in range (1,factor.shape[0]-1):
+            for j in range (i+1,factor.shape[0]):
                 if i != j and self.can_sum_out(factor, i, j, vars):
                     if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
                         sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
@@ -121,7 +121,6 @@ class VariableElimination():
                         row.append(str(sum_prob))
                         data.append(row)
         new_factor = pd.DataFrame(data, columns = vars + ['prob'])
-        self.factors[key] = new_factor
         return new_factor
 
 
@@ -169,7 +168,7 @@ class VariableElimination():
         print(f'\nE) The elimination ordering: {elim_order}\n')
 
         print(f'-----------------------')
-        print(f'F) The elimination part')
+        print(f'F) The elimination loop')
         print(f'-----------------------')
 
         i = len(self.factors) # Currently the highest factor index
@@ -177,26 +176,40 @@ class VariableElimination():
             print(f'\nThe variable to be eliminated: {v}')
             if v != query:
                 factors_with_v = self.get_factors(v)
-                print('-------------------PRODUCTS TO MULTIPLY----------------------')
+                print('\nFactors to multiply')
                 print(factors_with_v)
+
                 vars, new_factor = self.multiply(factors_with_v)
-                print('-------------------FINAL MULTIPLIED PRODUCT----------------------')
+                print('\nFactor after multiplication')
                 print(new_factor)
 
                 self.factors[(i, tuple(vars))] = new_factor
                 reduced_factor = self.sum_out(v, (i, tuple(vars)))
+                new_vars = list(reduced_factor.columns[:-1])
+                self.factors[i, tuple(new_vars)] = self.factors.pop((i, tuple(vars)))
+
+                print(f'\nFactor after summing out {v}')
+                print(reduced_factor)
                 for key in factors_with_v:
                     self.factors.pop(key)
-
-                reduced_factor['prob'] = pd.to_numeric(reduced_factor['prob'], downcast="float")
-                total = reduced_factor['prob'].sum()
-                reduced_factor['prob'] = reduced_factor['prob'] / total
-
                 i += 1
+                print(f'\nNew factors:')
+                print(self.factors)
+                print('---------------------------------')
 
         print(f'-------------------------------------')
         print(f'G) The final CPT after normalization:')
         print(f'-------------------------------------')
+
+        factors_with_v = self.get_factors(query)
+        print(query)
+        print(self.factors)
+
+        # final_prob = self.factors.#getlastelement
+        # final_prob['prob'] = pd.to_numeric(final_prob['prob'], downcast="float")
+        # total = final_prob['prob'].sum()
+        # final_prob['prob'] = final_prob['prob'] / total
+        # print(final_prob)
 
         print(f'\nDone!')
 
