@@ -4,11 +4,8 @@
 Class for the implementation of the variable elimination algorithm
 """
 
-from functools import reduce
 import pprint
-from typing import Tuple
 import pandas as pd
-import numpy as np
 import itertools
 
 
@@ -16,15 +13,16 @@ class VariableElimination():
 
     def __init__(self, network):
         """
-        Initialize the variable elimination algorithm with the specified network
+        Initialize the variable elimination algorithm with the factors 'network'
         """
         self.factors = network.probabilities
 
 
-    def update_factors(self, observed):
+    def init_factors(self, observed):
         """ 
-        Initialize factors, based on the observation observed
+        Initialize factors, based on the observation 'observed'
         """
+
         # Represent factors with keys with an index and a tuple of involved variables
         # 1. Index is useful once there are factors that contain the same variables
         # 2. Involved variables are useful for eliminating variables in the VE algorithm
@@ -46,7 +44,7 @@ class VariableElimination():
 
     def get_factors(self, var):
         """ 
-        Return (keys of) factors which contain variable var
+        Return (keys of) factors which contain variable 'var'
         """
         factors = []
         for key in self.factors:
@@ -55,137 +53,132 @@ class VariableElimination():
         return factors
 
 
+    def generate_factor(self, vars):
+        """
+        Generates a factor (truth table) from 'vars' and initially dummy probabilities
+        """
+        table = list(map(list, list(itertools.product(['True', 'False'], repeat=len(vars)))))
+        row = []
+        data = []
+        for r in table:
+            row = r
+            row.append(0)     # dummy probability
+            data.append(row)
+        factor = pd.DataFrame(data, columns = vars + ['prob'])
+        return factor
+
+
     def is_in(self, factor1, factor2):
-        vars1 = list(factor1.columns[:-1])
-        for v1 in vars1:
-            cell = factor2.iloc[0][v1]
-            if factor1.iloc[0][v1] != cell:
+        """
+        Returns true if all varaible-value pairs from factor1 are present in factor2
+        """
+        vars = list(factor1.columns[:-1])
+        for var in vars:
+            if factor1.iloc[0][var] != factor2.iloc[0][var]:
                 return False
         return True
 
 
     def multiply(self, factors):
+        """"
+        Return a factor (and its variables) which is a product of 'factors'
+        """
+
+        # Generate a new factor which we will populate with multiplied probabilities
         vars = []
         for key in factors:
             vars.extend(list(self.factors[key].columns[:-1]))
         vars = list(set(vars))
         product = self.generate_factor(vars)
 
+        # Multiply probabilities and return the final product
         probabilities = []
-        prob = 1
-        current_prob = 1
-
+        product_prob = current_prob = 1
         for i in range (0,product.shape[0]):
-            final_row = product.iloc[[i]]
+            product_row = product.iloc[[i]]
             for key in factors:
                 for j in range(0, self.factors[key].shape[0]):
                     current_row = self.factors[key].iloc[[j]]
-                    if self.is_in(current_row, final_row):
+                    if self.is_in(current_row, product_row):
                         current_prob = float(current_row.iloc[0]['prob'])
-                        prob = prob * current_prob
+                        product_prob = product_prob * current_prob
                         break
-            probabilities.append(prob)
-            prob = 1
-            
+            probabilities.append(product_prob)
+            product_prob = 1   
         product['prob'] = probabilities
         return vars, product
 
 
-    def generate_factor(self, vars):
-        table = list(map(list, list(itertools.product(['True', 'False'], repeat=len(vars)))))
-        row = []
-        data = []
-        for r in table:
-            row = r
-            row.append(0)
-            data.append(row)
-        new_factor = pd.DataFrame(data, columns = vars + ['prob'])
-        return new_factor
+    def can_sum_out(self, factor, i, j, vars):
+        """ 
+        Check whether row 'i' and row 'j' of 'factor' can be summed out, e.i. whether
+        all values of 'vars' are the same in both rows
+        """
+        for var in vars:
+            if factor.iloc[i][var] != factor.iloc[j][var]:
+                return False
+        return True
 
 
     def sum_out(self, var, factor):
         """"
-        Return a factor in which var was summed out of factor with key
+        Return a factor (and its variables) in which 'var' was summed out of 'factor'
         """
         vars = [x for x in list(factor.columns[:-1]) if x != var]
         data = []
         for i in range (0,factor.shape[0]):
             for j in range (i+1,factor.shape[0]):
                 if self.can_sum_out(factor, i, j, vars):
-                    if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
-                        sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
-                        row = []
-                        for v in vars:
-                            row.append(factor.loc[factor.index[i], v])
-                        row.append(str(sum_prob))
-                        data.append(row)
+                    sum_prob = factor.iloc[i]['prob'] + factor.iloc[j]['prob']
+                    row = []
+                    for v in vars:
+                        row.append(factor.loc[factor.index[i], v])
+                    row.append(str(sum_prob))
+                    data.append(row)
         sum_f = pd.DataFrame(data, columns = vars + ['prob'])
         return vars, sum_f
 
 
-    
-    def can_sum_out(self, factor, i, j, vars):
-        """ 
-        Check whether row i and row j of factor can be summed out, e.i. whether
-        all values of vars are the same in both rows
-        """
-        for v in vars:
-            if factor.loc[factor.index[i], v] != factor.loc[factor.index[j], v]:
-                return False
-        return True
-
-
     def run(self, query, observed, elim_order):
         """
-        Use the variable elimination algorithm to find out the probability
-        distribution of the query variable given the observed variables
-
-        Input:
-            query:      The query variable
-            observed:   A dictionary of the observed variables {variable: value}
-            elim_order: Either a list specifying the elimination ordering
-                        or a function that will determine an elimination ordering
-                        given the network during the run
-
-        Output: A variable holding the probability distribution
-                for the query variable
+        Returns the probability distribution of 'query' variable 
+        given the 'observed' variables and following the elimination order 'elim_order'
         """
 
-        print('\n----------------------------')
-        print('Variable Elimination Algorithm')
-        print('------------------------------')
+        print('\n------------------------------------')
+        print('|  Variable Elimination Algorithm  |')
+        print('------------------------------------')
 
         print(f'\nA) The query variable: {query}\n')
         if observed: 
             print(f'B) The observed variables: {observed}\n')
         else:
             print(f'B) There are no observed variables\n')
-        print('C) The formula to be computed: ...\n')
-        self.update_factors(observed)
+        self.init_factors(observed)
         print('D) The factors:\n')
         pprint.pprint(self.factors)
         print(f'\nE) The elimination ordering: {elim_order}\n')
 
-        print(f'\n---------------------')
-        print(f'F) The elimination loop')
-        print(f'-----------------------')
+        print(f'-----------------------------')
+        print(f'|  F) The elimination loop  |')
+        print(f'-----------------------------')
 
         i = len(self.factors) # Currently the highest factor index
         for v in elim_order:
             if v != query:
                 print(f'\nThe variable to eliminate: {v}')
                 factors_with_v = self.get_factors(v)
-                print('\nFactors to multiply')
+                print('\nFactors to multiply:')
                 print(factors_with_v)
 
                 vars, mult_factor = self.multiply(factors_with_v)
-                print('\nFactor after multiplication')
+                print('\nFactor after multiplication:')
                 print(mult_factor)
 
                 vars, sum_factor = self.sum_out(v, mult_factor)
                 self.factors[i, tuple(vars)] = sum_factor
 
-                print(f'\nFactor after summing out {v}')
+                print(f'\nFactor after summing out {v}:')
                 print(sum_factor)
                 for key in factors_with_v:
                     self.factors.pop(key)
@@ -193,24 +186,24 @@ class VariableElimination():
                 print(f'\nNew factors:')
                 pprint.pprint(self.factors)
 
-                print('\n-------------------------------')
+                print('\n--------------------')
+                print('|  Next iteration  |')
+                print('--------------------')
 
-        print(f'\n-----------------------------------')
-        print(f'The last multiplication:')
-        print(f'-------------------------------------')
-
+        print('\nFactors to multiply:')
+        print(self.factors.keys())
         vars, final_prob = self.multiply(self.factors.keys())
-        print('\nFactor after multiplication')
+        print('\nFactor product after the final multiplication:')
         print(final_prob)
 
-        print(f'\n-----------------------------------')
-        print(f'G) The final CPT after normalization:')
-        print(f'-------------------------------------')
+        print(f'\n-----------------------------------------------')
+        print(f'|  G) The resulting CPT after normalization:  |')
+        print(f'-----------------------------------------------')
 
         final_prob['prob'] = pd.to_numeric(final_prob['prob'], downcast="float")
         total = final_prob['prob'].sum()
         final_prob['prob'] = final_prob['prob'] / total
-        print(final_prob)
+        print(f'\n {final_prob}')
 
         print(f'\nDone!')
 

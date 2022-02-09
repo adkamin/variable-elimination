@@ -6,17 +6,18 @@ Variable Elimination Alogorithm
 Framework provded by Joris van Vugt, Moira Berens, Leonieke van den Bulk
 """
 
-import warnings
-warnings.filterwarnings("ignore")
-
 from bayesnet import BayesNet
 from variable_elim import VariableElimination
 import pprint
 
 if __name__ == '__main__':
     net = BayesNet('earthquake.bif')
+
+    print('-----------------------------')
+    print('|  Ntework specifications:  |')
+    print('-----------------------------')
     
-    print("Nodes:")
+    print("\nNodes:")
     print(f'{net.nodes}\n')
     print("Values:")
     print(f'{net.values}\n')
@@ -32,8 +33,7 @@ if __name__ == '__main__':
     query = 'Alarm'
 
     # The evidence (can also be empty when there is no evidence)
-    # evidence = {'Burglary': 'True'}
-    evidence = {}
+    evidence = {'Burglary': 'False'}
 
     # The elimination ordering
     elim_order = net.nodes
