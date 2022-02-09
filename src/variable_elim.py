@@ -18,7 +18,7 @@ class VariableElimination():
         """
         self.factors = network.probabilities
         self.observed = {}
-
+        
 
     def init_factors(self, observed):
         """ 
@@ -37,8 +37,8 @@ class VariableElimination():
 
         # Reduce the factors given the observation
         self.factors = new_factors
-        for o in observed:
-            for key in self.factors:
+        for key in self.factors:
+            for o in observed:
                 if o in key[1]:
                     self.factors[key].drop(self.factors[key].index[self.factors[key][o] != observed[o]],
                      inplace = True)
@@ -69,16 +69,11 @@ class VariableElimination():
             data.append(row)
         factor = pd.DataFrame(data, columns = vars + ['prob'])
 
-        # In case of evidence, remove
+        # In case of evidence, remove rows which do not correspond to evidence
         for o in self.observed:
             if o in vars:
-                print(f'Removing variable {o}')
-                print(o)
                 factor.drop(factor.index[factor[o] != self.observed[o]],
                     inplace = True)
-
-        print('---REMOVED CONTRA EVIDENCE---')
-        print(factor)
         return factor
 
 
@@ -180,7 +175,7 @@ class VariableElimination():
 
         i = len(self.factors) # Currently the highest factor index
         for v in elim_order:
-            if v != query:
+            if v != query and v not in observed.keys():
                 print(f'\nThe variable to eliminate: {v}')
                 factors_with_v = self.get_factors(v)
                 print('\nFactors to multiply:')

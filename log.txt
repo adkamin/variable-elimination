@@ -1,0 +1,202 @@
+-----------------------------
+|  Ntework specifications:  |
+-----------------------------
+
+Nodes:
+['Burglary', 'Earthquake', 'Alarm', 'JohnCalls', 'MaryCalls']
+
+Values:
+{'Burglary': ['True', 'False'], 'Earthquake': ['True', 'False'], 'Alarm': ['True', 'False'], 'JohnCalls': ['True', 'False'], 'MaryCalls': ['True', 'False']}
+
+Parents:
+{'Burglary': [], 'Earthquake': [], 'Alarm': ['Burglary', 'Earthquake'], 'JohnCalls': ['Alarm'], 'MaryCalls': ['Alarm']}
+
+Probabilities:
+{'Alarm':    Alarm Burglary Earthquake   prob
+0   True     True       True  0.950
+1  False     True       True  0.050
+2   True    False       True  0.290
+3  False    False       True  0.710
+4   True     True      False  0.940
+5  False     True      False  0.060
+6   True    False      False  0.001
+7  False    False      False  0.999,
+ 'Burglary':   Burglary  prob
+0     True  0.01
+1    False  0.99,
+ 'Earthquake':   Earthquake  prob
+0       True  0.02
+1      False  0.98,
+ 'JohnCalls':   JohnCalls  Alarm  prob
+0      True   True  0.90
+1     False   True  0.10
+2      True  False  0.05
+3     False  False  0.95,
+ 'MaryCalls':   MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99}
+
+------------------------------------
+|  Variable Elimination Algorithm  |
+------------------------------------
+
+A) The query variable: MaryCalls
+
+B) The observed variables: {'JohnCalls': 'True'}
+
+D) The factors:
+
+{(0, ('Burglary',)):   Burglary  prob
+0     True  0.01
+1    False  0.99,
+ (1, ('Earthquake',)):   Earthquake  prob
+0       True  0.02
+1      False  0.98,
+ (2, ('Alarm', 'Burglary', 'Earthquake')):    Alarm Burglary Earthquake   prob
+0   True     True       True  0.950
+1  False     True       True  0.050
+2   True    False       True  0.290
+3  False    False       True  0.710
+4   True     True      False  0.940
+5  False     True      False  0.060
+6   True    False      False  0.001
+7  False    False      False  0.999,
+ (3, ('JohnCalls', 'Alarm')):   JohnCalls  Alarm  prob
+0      True   True  0.90
+2      True  False  0.05,
+ (4, ('MaryCalls', 'Alarm')):   MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99}
+
+E) The elimination ordering: ['Burglary', 'Earthquake', 'Alarm', 'JohnCalls', 'MaryCalls']
+
+-----------------------------
+|  F) The elimination loop  |
+-----------------------------
+
+The variable to eliminate: Burglary
+
+Factors to multiply:
+[(0, ('Burglary',)), (2, ('Alarm', 'Burglary', 'Earthquake'))]
+
+Factor after multiplication:
+   Alarm Earthquake Burglary     prob
+0   True       True     True  0.00950
+1   True       True    False  0.28710
+2   True      False     True  0.00940
+3   True      False    False  0.00099
+4  False       True     True  0.00050
+5  False       True    False  0.70290
+6  False      False     True  0.00060
+7  False      False    False  0.98901
+
+Factor after summing out Burglary:
+   Alarm Earthquake                prob
+0   True       True              0.2966
+1   True      False             0.01039
+2  False       True  0.7033999999999999
+3  False      False             0.98961
+
+New factors:
+{(1, ('Earthquake',)):   Earthquake  prob
+0       True  0.02
+1      False  0.98,
+ (3, ('JohnCalls', 'Alarm')):   JohnCalls  Alarm  prob
+0      True   True  0.90
+2      True  False  0.05,
+ (4, ('MaryCalls', 'Alarm')):   MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99,
+ (5, ('Alarm', 'Earthquake')):    Alarm Earthquake                prob
+0   True       True              0.2966
+1   True      False             0.01039
+2  False       True  0.7033999999999999
+3  False      False             0.98961}
+
+--------------------
+|  Next iteration  |
+--------------------
+
+The variable to eliminate: Earthquake
+
+Factors to multiply:
+[(1, ('Earthquake',)), (5, ('Alarm', 'Earthquake'))]
+
+Factor after multiplication:
+   Alarm Earthquake      prob
+0   True       True  0.005932
+1   True      False  0.010182
+2  False       True  0.014068
+3  False      False  0.969818
+
+Factor after summing out Earthquake:
+   Alarm                prob
+0   True           0.0161142
+1  False  0.9838857999999999
+
+New factors:
+{(3, ('JohnCalls', 'Alarm')):   JohnCalls  Alarm  prob
+0      True   True  0.90
+2      True  False  0.05,
+ (4, ('MaryCalls', 'Alarm')):   MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99,
+ (6, ('Alarm',)):    Alarm                prob
+0   True           0.0161142
+1  False  0.9838857999999999}
+
+--------------------
+|  Next iteration  |
+--------------------
+
+The variable to eliminate: Alarm
+
+Factors to multiply:
+[(3, ('JohnCalls', 'Alarm')), (4, ('MaryCalls', 'Alarm')), (6, ('Alarm',))]
+
+Factor after multiplication:
+   Alarm JohnCalls MaryCalls      prob
+0   True      True      True  0.010152
+1   True      True     False  0.004351
+4  False      True      True  0.000492
+5  False      True     False  0.048702
+
+Factor after summing out Alarm:
+  JohnCalls MaryCalls                  prob
+0      True      True  0.010643888899999999
+1      True     False          0.0530531811
+
+New factors:
+{(7, ('JohnCalls', 'MaryCalls')):   JohnCalls MaryCalls                  prob
+0      True      True  0.010643888899999999
+1      True     False          0.0530531811}
+
+--------------------
+|  Next iteration  |
+--------------------
+
+Factors to multiply:
+dict_keys([(7, ('JohnCalls', 'MaryCalls'))])
+
+Factor product after the final multiplication:
+  JohnCalls MaryCalls      prob
+0      True      True  0.010644
+1      True     False  0.053053
+
+-----------------------------------------------
+|  G) The resulting CPT after normalization:  |
+-----------------------------------------------
+
+   JohnCalls MaryCalls      prob
+0      True      True  0.167102
+1      True     False  0.832898
+
+Done!

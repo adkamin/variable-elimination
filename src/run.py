@@ -30,11 +30,11 @@ if __name__ == '__main__':
     ve = VariableElimination(net)
 
     # Node to be queried
-    query = 'Alarm'
+    query = 'MaryCalls'
 
     # The evidence (can also be empty when there is no evidence)
-    # evidence = {'Alarm': 'True'}
-    evidence = {}
+    # evidence = {'Earthquake': 'False'}
+    evidence = {'JohnCalls' : 'True'}
 
     # The elimination ordering
     elim_order = net.nodes
