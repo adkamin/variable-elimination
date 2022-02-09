@@ -18,13 +18,12 @@ class VariableElimination():
         """
         self.factors = network.probabilities
         self.observed = {}
-        
+
 
     def init_factors(self, observed):
         """ 
         Initialize factors, based on the observation 'observed'
         """
-
         # Represent factors with keys with an index and a tuple of involved variables
         # 1. Index is useful once there are factors that contain the same variables
         # 2. Involved variables are useful for eliminating variables in the VE algorithm
@@ -92,7 +91,6 @@ class VariableElimination():
         """"
         Return a factor (and its variables) which is a product of 'factors'
         """
-
         # Generate a new factor which we will populate with multiplied probabilities
         vars = []
         for key in factors:
