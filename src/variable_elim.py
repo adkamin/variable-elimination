@@ -103,16 +103,15 @@ class VariableElimination():
         return new_factor
 
 
-    def sum_out(self, var, key):
+    def sum_out(self, var, factor):
         """"
         Return a factor in which var was summed out of factor with key
         """
-        vars = [x for x in key[1] if x != var]
-        factor = self.factors[key]
+        vars = [x for x in list(factor.columns[:-1]) if x != var]
         data = []
         for i in range (0,factor.shape[0]):
             for j in range (i+1,factor.shape[0]):
-                if i != j and self.can_sum_out(factor, i, j, vars):
+                if self.can_sum_out(factor, i, j, vars):
                     if factor.loc[factor.index[i], var] != factor.loc[factor.index[j], var]:
                         sum_prob = factor.loc[factor.index[i], 'prob'] + factor.loc[factor.index[j], 'prob']
                         row = []
@@ -120,8 +119,8 @@ class VariableElimination():
                             row.append(factor.loc[factor.index[i], v])
                         row.append(str(sum_prob))
                         data.append(row)
-        new_factor = pd.DataFrame(data, columns = vars + ['prob'])
-        return new_factor
+        sum_f = pd.DataFrame(data, columns = vars + ['prob'])
+        return vars, sum_f
 
 
     
@@ -152,7 +151,7 @@ class VariableElimination():
                 for the query variable
         """
 
-        print('------------------------------')
+        print('\n----------------------------')
         print('Variable Elimination Algorithm')
         print('------------------------------')
 
@@ -167,49 +166,51 @@ class VariableElimination():
         pprint.pprint(self.factors)
         print(f'\nE) The elimination ordering: {elim_order}\n')
 
-        print(f'-----------------------')
+        print(f'\n---------------------')
         print(f'F) The elimination loop')
         print(f'-----------------------')
 
         i = len(self.factors) # Currently the highest factor index
         for v in elim_order:
-            print(f'\nThe variable to be eliminated: {v}')
             if v != query:
+                print(f'\nThe variable to eliminate: {v}')
                 factors_with_v = self.get_factors(v)
                 print('\nFactors to multiply')
                 print(factors_with_v)
 
-                vars, new_factor = self.multiply(factors_with_v)
+                vars, mult_factor = self.multiply(factors_with_v)
                 print('\nFactor after multiplication')
-                print(new_factor)
+                print(mult_factor)
 
-                self.factors[(i, tuple(vars))] = new_factor
-                reduced_factor = self.sum_out(v, (i, tuple(vars)))
-                new_vars = list(reduced_factor.columns[:-1])
-                self.factors[i, tuple(new_vars)] = self.factors.pop((i, tuple(vars)))
+                vars, sum_factor = self.sum_out(v, mult_factor)
+                self.factors[i, tuple(vars)] = sum_factor
 
                 print(f'\nFactor after summing out {v}')
-                print(reduced_factor)
+                print(sum_factor)
                 for key in factors_with_v:
                     self.factors.pop(key)
                 i += 1
                 print(f'\nNew factors:')
-                print(self.factors)
-                print('---------------------------------')
+                pprint.pprint(self.factors)
 
+                print('\n-------------------------------')
+
+        print(f'\n-----------------------------------')
+        print(f'The last multiplication:')
         print(f'-------------------------------------')
+
+        vars, final_prob = self.multiply(self.factors.keys())
+        print('\nFactor after multiplication')
+        print(final_prob)
+
+        print(f'\n-----------------------------------')
         print(f'G) The final CPT after normalization:')
         print(f'-------------------------------------')
 
-        factors_with_v = self.get_factors(query)
-        print(query)
-        print(self.factors)
-
-        # final_prob = self.factors.#getlastelement
-        # final_prob['prob'] = pd.to_numeric(final_prob['prob'], downcast="float")
-        # total = final_prob['prob'].sum()
-        # final_prob['prob'] = final_prob['prob'] / total
-        # print(final_prob)
+        final_prob['prob'] = pd.to_numeric(final_prob['prob'], downcast="float")
+        total = final_prob['prob'].sum()
+        final_prob['prob'] = final_prob['prob'] / total
+        print(final_prob)
 
         print(f'\nDone!')
 
