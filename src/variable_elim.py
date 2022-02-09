@@ -13,9 +13,11 @@ class VariableElimination():
 
     def __init__(self, network):
         """
-        Initialize the variable elimination algorithm with the factors 'network'
+        Initialize the variable elimination algorithm with the factors of 'network'
+        and the evidence
         """
         self.factors = network.probabilities
+        self.observed = {}
 
 
     def init_factors(self, observed):
@@ -57,6 +59,7 @@ class VariableElimination():
         """
         Generates a factor (truth table) from 'vars' and initially dummy probabilities
         """
+        # Generate truth table
         table = list(map(list, list(itertools.product(['True', 'False'], repeat=len(vars)))))
         row = []
         data = []
@@ -65,6 +68,17 @@ class VariableElimination():
             row.append(0)     # dummy probability
             data.append(row)
         factor = pd.DataFrame(data, columns = vars + ['prob'])
+
+        # In case of evidence, remove
+        for o in self.observed:
+            if o in vars:
+                print(f'Removing variable {o}')
+                print(o)
+                factor.drop(factor.index[factor[o] != self.observed[o]],
+                    inplace = True)
+
+        print('---REMOVED CONTRA EVIDENCE---')
+        print(factor)
         return factor
 
 
@@ -151,6 +165,7 @@ class VariableElimination():
 
         print(f'\nA) The query variable: {query}\n')
         if observed: 
+            self.observed = observed
             print(f'B) The observed variables: {observed}\n')
         else:
             print(f'B) There are no observed variables\n')
