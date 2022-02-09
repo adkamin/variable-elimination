@@ -33,7 +33,6 @@ if __name__ == '__main__':
     query = 'MaryCalls'
 
     # The evidence (can also be empty when there is no evidence)
-    # evidence = {'Earthquake': 'False'}
     evidence = {'JohnCalls' : 'True'}
 
     # The elimination ordering
