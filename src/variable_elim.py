@@ -18,6 +18,15 @@ class VariableElimination():
         """
         self.factors = network.probabilities
         self.observed = {}
+        self.max_size_factor = 0
+
+
+    def update_max_size_factor(self, factor):
+        """"
+        Updates the maximum factor size if applicable
+        """
+        if len(list(factor.columns[:-1])) > self.max_size_factor:
+            self.max_size_factor = len(list(factor.columns[:-1]))
 
 
     def init_factors(self, observed):
@@ -41,6 +50,11 @@ class VariableElimination():
                 if o in key[1]:
                     self.factors[key].drop(self.factors[key].index[self.factors[key][o] != observed[o]],
                      inplace = True)
+
+        # Save the size of biggest factor
+        for key in self.factors:
+            self.update_max_size_factor(self.factors[key])
+
 
 
     def get_factors(self, var):
@@ -97,6 +111,7 @@ class VariableElimination():
             vars.extend(list(self.factors[key].columns[:-1]))
         vars = list(set(vars))
         product = self.generate_factor(vars)
+        self.update_max_size_factor(product)
 
         # Multiply probabilities and return the final product
         probabilities = []
@@ -171,6 +186,7 @@ class VariableElimination():
         print(f'|  F) The elimination loop  |')
         print(f'-----------------------------')
 
+        it = 1
         i = len(self.factors) # Currently the highest factor index
         for v in elim_order:
             if v != query and v not in observed.keys():
@@ -194,9 +210,10 @@ class VariableElimination():
                 print(f'\nNew factors:')
                 pprint.pprint(self.factors)
 
-                print('\n--------------------')
-                print('|  Next iteration  |')
-                print('--------------------')
+                it += 1
+                print('\n-------------------')
+                print(f'|  Next nr {it}:  |')
+                print('-------------------')
 
         print('\nFactors to multiply:')
         print(self.factors.keys())
@@ -212,6 +229,7 @@ class VariableElimination():
         total = final_prob['prob'].sum()
         final_prob['prob'] = final_prob['prob'] / total
         print(f'\n {final_prob}')
+        print(f'\nBiggest factor had size: {self.max_size_factor}')
 
         print(f'\nDone!')
 
