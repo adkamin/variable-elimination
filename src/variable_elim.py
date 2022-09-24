@@ -1,5 +1,5 @@
 """
-@Author: Andrea Minichova (s1021688)
+@Author: Andrea Minichova
 
 Class for the implementation of the variable elimination algorithm
 """
